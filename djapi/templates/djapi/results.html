@@ -1,1 +1,152 @@
-<h2>Query {{ query.id }}</h2>
+<html>
+    <head>
+        <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+        <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script type="text/javascript">
+            google.charts.load('current', {packages: ['corechart']});
+            google.charts.setOnLoadCallback(drawChart);
+            
+            function drawChart() {
+                var url = 'https://api.sbif.cl/api-sbifv3/recursos_api/';
+                var indicators = {{ indicators|safe }};
+                indicators.forEach( function (indicator) {
+                    
+                    if (indicator.localeCompare('UF') == 0) {
+                        
+                        api_url = url + 'uf/periodo/' + 
+                            {{ query.start_date.year }} + '/' + 
+                            {{ query.start_date.month }} + '/dias_i/' +
+                            {{ query.start_date.day }} + '/' + 
+                            {{ query.end_date.year }} + '/' + 
+                            {{ query.end_date.month }} + '/dias_f/' +
+                            {{ query.end_date.day }};
+                        
+                        $.ajax({
+                            url: api_url,
+                            method: 'GET',
+                            dataType: 'JSON',
+                            data: {
+                                apikey: '1ef1f94afcdc4131199ece369ff5fb29d901a3fe',
+                                formato: 'json'
+                            },
+                            success: function(jsonData) {
+                                
+                                var min = 0;
+                                var max = 0;
+                                var sum = 0;
+                                var avg = 0
+                                var len = jsonData.UFs.length;
+                                
+                                var data = new google.visualization.DataTable();
+                                data.addColumn('string','Date');
+                                data.addColumn('number','Value');
+                                
+                                for (i = 0; i < len; i++) {
+                                    var value = jsonData.UFs[i].Valor.replace('.', '').replace(',', '.');
+                                    data.addRow([jsonData.UFs[i].Fecha, parseFloat(value)]);
+                                    
+                                    if (parseFloat(value) < parseFloat(jsonData.UFs[min].Valor.replace('.', '').replace(',', '.'))) min = i;
+                                    if (parseFloat(value) > parseFloat(jsonData.UFs[max].Valor.replace('.', '').replace(',', '.'))) max = i;
+                                    sum += parseFloat(value);
+                                }
+                                avg = sum / len;
+                                
+                                var options = {
+                                    title: 'UF value for the period from ' +
+                                        {{ query.start_date.year }} + '-' +
+                                        ('0' + {{ query.start_date.month }}).slice(-2) + '-' +
+                                        ('0' + {{ query.start_date.day }}).slice(-2) + ' to ' +
+                                        {{ query.end_date.year }} + '-' +
+                                        ('0' + {{ query.end_date.month }}).slice(-2) + '-' +
+                                        ('0' + {{ query.end_date.day }}).slice(-2) + 
+                                        '\n** Minimum: $' + jsonData.UFs[min].Valor.replace('.', '').replace(',', '.') +
+                                        ' CLP registered in ' + jsonData.UFs[min].Fecha +
+                                        '\n** Maximum: $' + jsonData.UFs[max].Valor.replace('.', '').replace(',', '.') +
+                                        ' CLP registered in ' + jsonData.UFs[max].Fecha +
+                                        '\n** Average of the period: $' + avg.toFixed(2) + ' CLP',
+                                    hAxis: { title: 'Date' },
+                                    vAxis: { title: 'Value' },
+                                    legend: { position: 'none' },
+                                    height: 600,
+                                };
+                                    
+                                var chart = new google.visualization.LineChart(document.getElementById('chart_uf'));
+                                chart.draw(data, options);
+                            },
+                            error: function(jsonData) {console.log('Error retrieving SBIF API data')}
+                        })
+                    }
+                    if (indicator.localeCompare('Dollar') == 0) {
+                        
+                        api_url = url + 'dolar/periodo/' + 
+                            {{ query.start_date.year }} + '/' + 
+                            {{ query.start_date.month }} + '/dias_i/' +
+                            {{ query.start_date.day }} + '/' + 
+                            {{ query.end_date.year }} + '/' + 
+                            {{ query.end_date.month }} + '/dias_f/' +
+                            {{ query.end_date.day }};
+                        
+                        $.ajax({
+                            url: api_url,
+                            method: 'GET',
+                            dataType: 'JSON',
+                            data: {
+                                apikey: '1ef1f94afcdc4131199ece369ff5fb29d901a3fe',
+                                formato: 'json'
+                            },
+                            success: function(jsonData) {
+                                
+                                var min = 0;
+                                var max = 0;
+                                var sum = 0;
+                                var avg = 0
+                                var len = jsonData.Dolares.length;
+                                
+                                var data = new google.visualization.DataTable();
+                                data.addColumn('string','Date');
+                                data.addColumn('number','Value');
+                                
+                                for (i = 0; i < len; i++) {
+                                    var value = jsonData.Dolares[i].Valor.replace('.', '').replace(',', '.');
+                                    data.addRow([jsonData.Dolares[i].Fecha, parseFloat(value)]);
+                                    
+                                    if (parseFloat(value) < parseFloat(jsonData.Dolares[min].Valor.replace('.', '').replace(',', '.'))) min = i;
+                                    if (parseFloat(value) > parseFloat(jsonData.Dolares[max].Valor.replace('.', '').replace(',', '.'))) max = i;
+                                    sum += parseFloat(value);
+                                }
+                                avg = sum / len;
+                                
+                                var options = {
+                                    title: 'Dollar value for the period from ' +
+                                        {{ query.start_date.year }} + '-' +
+                                        ('0' + {{ query.start_date.month }}).slice(-2) + '-' +
+                                        ('0' + {{ query.start_date.day }}).slice(-2) + ' to ' +
+                                        {{ query.end_date.year }} + '-' +
+                                        ('0' + {{ query.end_date.month }}).slice(-2) + '-' +
+                                        ('0' + {{ query.end_date.day }}).slice(-2) + 
+                                        '\n** Minimum: $' + jsonData.Dolares[min].Valor.replace('.', '').replace(',', '.') +
+                                        ' CLP registered in ' + jsonData.Dolares[min].Fecha +
+                                        '\n** Maximum: $' + jsonData.Dolares[max].Valor.replace('.', '').replace(',', '.') +
+                                        ' CLP registered in ' + jsonData.Dolares[max].Fecha +
+                                        '\n** Average of the period: ' + avg.toFixed(2) + ' CLP',
+                                    hAxis: { title: 'Date' },
+                                    vAxis: { title: 'Value' },
+                                    legend: { position: 'none' },
+                                    height: 600,
+                                };
+                                    
+                                var chart = new google.visualization.LineChart(document.getElementById('chart_dollar'));
+                                chart.draw(data, options);
+                            },
+                            error: function(jsonData) {console.log(api_url)}
+                        })
+                    }
+                })
+            }
+        </script>
+    </head>
+    <body>
+        <div id="chart_uf"></div>
+        <div id="chart_dollar"></div>
+    </body>
+</html>

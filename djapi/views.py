@@ -14,4 +14,11 @@ class QueryView(generic.CreateView):
 
 def results(request, query_id):
     query = get_object_or_404(models.Query, pk=query_id)
-    return render(request, 'djapi/results.html', {'query': query})
+    indicators = []
+    
+    indicators_list = models.FinantialIndicator.objects.all()
+    for ind in indicators_list:
+        if ind.query_set.filter(pk=query_id).exists():
+            indicators.append(ind.indicator_name)
+    
+    return render(request, 'djapi/results.html', {'query': query, 'indicators': indicators})
